@@ -66,6 +66,7 @@ router.post('/register', db, dao, asyncHandler (async (req, res) => {
     }
 }));
 
+
 // User login
 router.post('/login', db, dao, asyncHandler(async (req, res) => {
   const { username, password } = req.body;
@@ -113,6 +114,7 @@ router.post('/login', db, dao, asyncHandler(async (req, res) => {
   });
 }));
 
+
 // Get all users
 router.get('/users', db, auth, asyncHandler(async (req, res) => {
   try {
@@ -147,30 +149,34 @@ router.get('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   });
 }));
 
+
 // Update user info
 router.put('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   const uuid = req.params.uuid;
   const user = req.body;
   const id = await req.db('users').select().where('UUID', uuid).first();
-  console.log(id);
   if(!id){
     return res.status(404).send({
       success: false,
       message: 'User not found'
     });
   }
-  
   try{
+    const hash = await bcrypt.hash(user.password, 10);
     const result = await req.db('users')
       .where('UUID', uuid)
       .update({
         USERNAME: user.username,
-        PASSWORD: user.password,
+        PASSWORD: hash,
         FIRSTNAME: user.firstname,
         LASTNAME: user.lastname,
         EMAIL:user.email,
         ROLE: user.role
-      });
+      })
+      // Create logs
+      await req.db('users_logs')
+      .where({user_id: uuid})
+      .update({updated_acc_at: req.db.fn.now()})
     if (result === 0) {
       return res.status(404).send({
         success: false,
@@ -192,6 +198,7 @@ router.put('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
     }
   });
 }));
+
 
 // Delete a user
 router.delete('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
