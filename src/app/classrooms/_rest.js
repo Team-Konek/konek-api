@@ -7,15 +7,15 @@ router.get('/classroom/:id', auth, (req, res) => {
 });
 
 router.put('/classroom/:id', auth, (req, res) => {
-  res.send('OK');
+  res.send('EDITING');
 });
 
 router.delete('/classroom/:id', auth, (req, res) => {
-  res.send('OK');
+  res.send('DELETING');
 });
 
 router.post('/classroom', auth, (req, res) => {
-  res.send('OK');
+  res.send('LOADING');
 });
 
 router.get('/classrooms', auth, (req, res) => {
