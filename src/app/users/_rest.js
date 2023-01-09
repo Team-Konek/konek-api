@@ -6,8 +6,8 @@ const router = express.Router();
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
 const { restart } = require('nodemon');
+
 
 // Register a new user
 router.post('/register', db, dao, asyncHandler (async (req, res) => {
@@ -35,10 +35,17 @@ router.post('/register', db, dao, asyncHandler (async (req, res) => {
           PASSWORD: hash,
           FIRSTNAME: user.firstname,
           LASTNAME: user.lastname,
-          CREATED_AT: req.db.fn.now()
+          EMAIL: user.email,
+          ROLE: user.role
+        });
+        const userId = result[0];
+        await req.db('users_logs')
+        .insert({
+          CREATED_ACC_AT: req.db.fn.now(),
+          USER_ID: userId
         });
       // Create a JWT token (optional)
-      const token = jwt.sign({ id: result[0] }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
         expiresIn: 86400 // expires in 24 hours
       });
       res.status(201).send({
@@ -51,14 +58,15 @@ router.post('/register', db, dao, asyncHandler (async (req, res) => {
         token: token
       });
     } catch (error) {
-      return res.status(500).send({ 
+      return res.status(500).send({
+        success: false, 
         message: 'Error registering user',
         error: error
       });
     }
 }));
 
-//User login
+// User login
 router.post('/login', db, dao, asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -73,7 +81,7 @@ router.post('/login', db, dao, asyncHandler(async (req, res) => {
       message: 'Username not found'
     });
   }
-  //Validate user's hashed password
+  // Validate user's hashed password
   try {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
@@ -84,16 +92,19 @@ router.post('/login', db, dao, asyncHandler(async (req, res) => {
     }
   } catch (error) {
     return res.status(500).send({
+      success: false, 
       message: 'Error checking password',
       error: error
     });
   }
-
+  // Create logs
+  await req.db('users_logs')
+  .where({user_id: user.uuid})
+  .update({logged_in_at: req.db.fn.now()})
   // Create a JWT token
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET, {
     expiresIn: 86400 // expires in 24 hours
   });
-
   res.status(200).send({
     valid: true,
     message: 'Login successful',
@@ -102,7 +113,7 @@ router.post('/login', db, dao, asyncHandler(async (req, res) => {
   });
 }));
 
-//Get all users
+// Get all users
 router.get('/users', db, auth, asyncHandler(async (req, res) => {
   try {
     const users = await req.db('users').select();
@@ -120,7 +131,7 @@ router.get('/users', db, auth, asyncHandler(async (req, res) => {
 }));
 
 
-//Get User info
+// Get User info
 router.get('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   const uuid = req.params.uuid;
   const user = await req.db('users').select().where('UUID', uuid).first();
@@ -136,7 +147,7 @@ router.get('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   });
 }));
 
-//Updating user info
+// Update user info
 router.put('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   const uuid = req.params.uuid;
   const user = req.body;
@@ -157,7 +168,8 @@ router.put('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
         PASSWORD: user.password,
         FIRSTNAME: user.firstname,
         LASTNAME: user.lastname,
-        UPDATED_AT: req.db.fn.now()
+        EMAIL:user.email,
+        ROLE: user.role
       });
     if (result === 0) {
       return res.status(404).send({
@@ -181,7 +193,7 @@ router.put('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   });
 }));
 
-//Deleting a user
+// Delete a user
 router.delete('/user/:uuid', db, auth, asyncHandler(async (req, res) => {
   const uuid = req.params.uuid;
   try {
