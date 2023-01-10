@@ -1,4 +1,4 @@
-const db = require('../../middlewares/db');
+const db = require('./db');
 const asyncHandler = require('express-async-handler');
 
 const userDao = (db, asyncHandler(async (req, res, next) => {
