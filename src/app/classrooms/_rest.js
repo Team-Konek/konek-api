@@ -1,29 +1,23 @@
 const express = require('express');
 const auth = require('../../middlewares/auth');
+const db = require('../../middlewares/db');
+const schema = require('../../middlewares/schema');
+const asyncHandler = require('express-async-handler');
+const ClassroomService = require('./classroom-service');
+
+const classroomService = new ClassroomService();
 const router = express.Router();
 
-router.put('/classroom/:id', auth, (req, res) => {
-  res.send('EDITING');
-});
+// Get Classroom
+router.get('/classroom/:uuid', db, auth, asyncHandler(classroomService.getClassroom));
 
+// Get all Classroom
+router.get('/classrooms', db, auth, asyncHandler(classroomService.getClassrooms));
 
-router.get('/classroom/:id', auth, (req, res) => {
-  res.send('OK');
-});
+// Add new Classroom
+router.post('/classroom', db, auth, asyncHandler(classroomService.addClassroom));
 
-
-router.get('/classrooms', auth, (req, res) => {
-  res.send('OK');
-});
-
-
-router.post('/classroom', auth, (req, res) => {
-  res.send('LOADING');
-});
-
-
-router.delete('/classroom/:id', auth, (req, res) => {
-  res.send('DELETING');
-});
+// Update Classroom by ID
+router.put('/classroom/:uuid', db, auth, asyncHandler(classroomService.updateClassroom));
 
 module.exports = router;

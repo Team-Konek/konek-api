@@ -7,10 +7,6 @@ const UserService = require('./users-service');
 //const UserService = require('./users-service');
 //const { restart } = require('nodemon');
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const UserStore = require('./users-store');
-
 const userService = new UserService();
 const router = express.Router();
 
@@ -27,7 +23,7 @@ router.put('/user/:uuid', db, auth, asyncHandler(userService.updateUser));
 router.delete('/user/:uuid', db, auth, asyncHandler(userService.deleteUser));
 
 // Register new user
-router.post('/register', db, schema, asyncHandler (userService.registerUser));
+router.post('/register', db, schema, asyncHandler (userService.addUser));
 
 // User login
 router.post('/login', db, schema, asyncHandler(userService.loginUser));

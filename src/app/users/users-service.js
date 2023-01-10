@@ -1,4 +1,5 @@
 const UserStore = require('./users-store');
+const LogsStore = require('../logs/logs-store');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -9,8 +10,9 @@ class UserService {
 
 
 // Register new user  
-  async registerUser(req, res) {
+  async addUser(req, res) {
     const userStore = new UserStore(req.db);
+    const logsStore = new LogsStore(req.db);
     const user = req.body;
     // Hash the password
     const hash = await bcrypt.hash(user.password, 10);
@@ -32,12 +34,12 @@ class UserService {
       const result = await userStore.registerUser(user, hash)
       const userId = result[0];
       // Create logs
-      await userStore.createLogs(userId);
+      await logsStore.registerLogs(userId);
       // Create a JWT token (optional if directly logged in after registration)
       const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
         expiresIn: 86400 // expires in 24 hours
       });
-      res.status(201).send({
+      return res.status(201).send({
         success: true,
         message: 'Registration successful',
         data: {
@@ -58,7 +60,8 @@ class UserService {
 
 // Login User
   async loginUser(req, res) {
-    const userStore = new UserStore(req.db);
+    const userStore = new UserStore(req.db);    
+    const logsStore = new LogsStore(req.db);
     const { username, password } = req.body;
     if (!username || !password) {
       return res.status(400).send({ 
@@ -89,12 +92,12 @@ class UserService {
       });
     }
     // Create logs
-    await userStore.loginLogs(user.uuid);
+    await logsStore.loginLogs(user.uuid);
     // Create a JWT token
     const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET, {
       expiresIn: 86400 // expires in 24 hours
     });
-    res.status(200).send({
+    return res.status(200).send({
       valid: true,
       message: 'Login successful',
       data: user,
@@ -114,7 +117,7 @@ async getUser(req, res) {
       message: 'User not found'
     });
   }
-  res.status(200).send({
+  return res.status(200).send({
     success: true,
     data: user
   });
@@ -143,19 +146,19 @@ async getUser(req, res) {
   // Update user info
   async updateUser(req, res) {
     const userStore = new UserStore(req.db);
+    const logsStore = new LogsStore(req.db);
     const uuid = req.params.uuid;
     const user = req.body;
     const hash = await bcrypt.hash(user.password, 10);
     const id = await userStore.getUserByUUID(uuid);
-    if(!id){
+    if (!id){
       return res.status(404).send({
         success: false,
         message: 'User not found'
       });
     }
     try{
-      const result = userStore.updateUser(uuid, user, hash)
-        
+      const result = userStore.updateUser(uuid, user, hash);
       if (result === 0) {
         return res.status(404).send({
           success: false,
@@ -163,7 +166,7 @@ async getUser(req, res) {
         });
       }
       // Create logs
-      await userStore.updateLogs(uuid);
+      await logsStore.userUpdateLogs(uuid);
     } catch (error) {
       return res.status(500).send({ 
         success: false,
@@ -171,7 +174,7 @@ async getUser(req, res) {
         error: error
       });
     }
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       data: {
         uuid, ...user
@@ -199,7 +202,7 @@ async getUser(req, res) {
         error: error
       });
     }
-    res.status(202).send({
+    return res.status(202).send({
       success: true,
       message: 'User has been deleted'
     });

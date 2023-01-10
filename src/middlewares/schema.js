@@ -22,10 +22,17 @@ const userDao = (db, asyncHandler(async (req, res, next) => {
         table.string('email').notNullable();
         table.string('role').notNullable();
 
-      }).createTable('classroom', async(table) => {
+      }).createTable('classrooms', async(table) => {
         table.increments('uuid').primary();
         table.string('subject').notNullable();
         table.string('description').notNullable();
+        table.integer('status').notNullable().defaultTo(1);
+        table.integer('created_by')
+        .unsigned()
+        .notNullable()
+        .references('uuid')
+        .inTable('users')
+        .onDelete('CASCADE');
 
       }).createTable('enrollments', (table) => {
         table.integer('user_id')
@@ -38,11 +45,11 @@ const userDao = (db, asyncHandler(async (req, res, next) => {
         .unsigned()
         .notNullable()
         .references('uuid')
-        .inTable('classroom')
+        .inTable('classrooms')
         .onDelete('CASCADE');
         table.primary(['user_id', 'class_id']);
 
-      }).createTable('users_logs', async (table) => {
+      }).createTable('logs', async (table) => {
         table.increments('log_id').primary();
         table.timestamp('created_acc_at').nullable();
         table.timestamp('updated_acc_at').nullable();
@@ -52,11 +59,19 @@ const userDao = (db, asyncHandler(async (req, res, next) => {
         table.timestamp('left_room_at').nullable();
         table.timestamp('created_quiz_at').nullable();
         table.timestamp('submitted_at').nullable();
+        table.timestamp('add_classroom_at').nullable();
+        table.timestamp('update_classroom_at').nullable();
         table.integer('user_id')
         .unsigned()
         .notNullable()
         .references('uuid')
         .inTable('users')
+        .onDelete('CASCADE');
+        table.integer('class_id')
+        .unsigned()
+        .nullable()
+        .references('uuid')
+        .inTable('classrooms')
         .onDelete('CASCADE');
       });
     } catch (error) {

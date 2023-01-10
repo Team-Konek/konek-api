@@ -23,14 +23,14 @@ class UserStore {
 
   async registerUser(user, hash) {
     return await this.db('users')
-    .insert({
-      USERNAME: user.username,
-      PASSWORD: hash,
-      FIRSTNAME: user.firstname,
-      LASTNAME: user.lastname,
-      EMAIL: user.email,
-      ROLE: user.role
-    });
+      .insert({
+        USERNAME: user.username,
+        PASSWORD: hash,
+        FIRSTNAME: user.firstname,
+        LASTNAME: user.lastname,
+        EMAIL: user.email,
+        ROLE: user.role
+      });
   }
 
   async updateUser(uuid, user, hash) {
@@ -44,29 +44,6 @@ class UserStore {
         EMAIL:user.email,
         ROLE: user.role
       });
-  }
-
-
-  async createLogs(uuid) {
-    await this.db('users_logs')
-      .insert({
-        created_acc_at: this.db.fn.now(),
-        user_id: uuid
-      });
-  }
-
-
-  async updateLogs(uuid) {
-    await this.db('users_logs')
-      .where({user_id: uuid})
-      .update({updated_acc_at: this.db.fn.now()})
-  }
-
-  
-  async loginLogs(uuid) {
-    await this.db('users_logs')
-      .where({user_id: uuid})
-      .update({logged_in_at: this.db.fn.now()})
   }
 
 
